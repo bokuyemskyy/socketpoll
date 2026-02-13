@@ -31,7 +31,7 @@ struct EventPoll::Impl {
     }
 
     static PollEvent fromNative(short native) {
-        uint8_t res = PollEvent::None;
+        uint8_t res = PollEvent::NONE;
         if (native & (POLLRDNORM | POLLRDBAND))
             res |= PollEvent::READ;
         if (native & POLLWRNORM)

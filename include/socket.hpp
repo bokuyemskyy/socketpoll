@@ -6,15 +6,15 @@
 #ifdef _WIN32
 #include <BaseTsd.h>
 #include <winsock2.h>
-using socket_size_t                         = SSIZE_T;
-using socket_t                              = SOCKET;
-inline constexpr socket_t INVALID_SOCKET_FD = INVALID_SOCKET;
+using socket_size_t                  = SSIZE_T;
+using socket_t                       = SOCKET;
+constexpr socket_t INVALID_SOCKET_FD = INVALID_SOCKET;
 #else
 #include <sys/socket.h>
 #include <sys/types.h>
-using socket_size_t                         = ssize_t;
-using socket_t                              = int;
-inline constexpr socket_t INVALID_SOCKET_FD = -1;
+using socket_size_t                  = ssize_t;
+using socket_t                       = int;
+constexpr socket_t INVALID_SOCKET_FD = -1;
 #endif
 
 class Socket {
