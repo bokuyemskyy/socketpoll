@@ -1,2 +1,3 @@
-# libnet
-Cross-platform socket and event poll abstractions for C++
+# SocketPoll
+A lightweight C++ library providing cross-platform abstractions for network sockets and event polling.
+
