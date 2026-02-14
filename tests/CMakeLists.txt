@@ -8,9 +8,9 @@ FetchContent_MakeAvailable(catch2)
 
 enable_testing()
 
-add_executable(tests test_socket.cpp test_poll.cpp)
+add_executable(tests test_main.cpp test_socket.cpp test_poll.cpp)
 
-target_link_libraries(tests PRIVATE Catch2::Catch2WithMain socketpoll)
+target_link_libraries(tests PRIVATE Catch2::Catch2 socketpoll)
 
 list(APPEND CMAKE_MODULE_PATH ${catch2_SOURCE_DIR}/extras)
 include(Catch)

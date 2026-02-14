@@ -9,7 +9,9 @@ endif()
 
 # Platform detection
 include(CheckIncludeFiles)
+set(CMAKE_REQUIRED_DEFINITIONS "-DWIN32_LEAN_AND_MEAN")
 check_include_files("windows.h;winsock2.h;ws2tcpip.h" HAVE_WINSOCK_HEADERS)
+unset(CMAKE_REQUIRED_DEFINITIONS)
 check_include_files("sys/socket.h;netinet/in.h;arpa/inet.h" HAVE_POSIX_SOCKET_HEADERS)
 check_include_files("sys/epoll.h" HAVE_EPOLL_HEADERS)
 check_include_files("sys/types.h;sys/event.h" HAVE_KQUEUE_HEADERS)
@@ -89,9 +91,9 @@ endif()
 
 # Configuration summary
 if (SOCKETPOLL_IS_TOP_LEVEL)
-    message(STATUS " SocketPoll configuration:")
-    message(STATUS "   Poll Impl:         ${POLL_IMPL}")
-    message(STATUS "   Socket Impl:       ${SOCKET_IMPL}")
+    message(STATUS "SocketPoll configuration:")
+    message(STATUS "Poll Impl:         ${POLL_IMPL}")
+    message(STATUS "Socket Impl:       ${SOCKET_IMPL}")
 endif()
 
 # Build library

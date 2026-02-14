@@ -1,11 +1,6 @@
 #include "event_poll.hpp"
 #include "socket.hpp"
-
-#include <chrono>
-#include <netinet/in.h>
-#include <thread>
-#define CATCH_CONFIG_MAIN
-#include <catch2/catch_test_macros.hpp>
+#include "test_utils.hpp"
 
 #ifdef _WIN32
 #include <winsock2.h>
@@ -16,8 +11,8 @@
 #endif
 
 #include <catch2/catch_test_macros.hpp>
-
-uint16_t findAvailablePort();
+#include <chrono>
+#include <thread>
 
 TEST_CASE("EventPoll: Construction") {
     SECTION("Default construction") {

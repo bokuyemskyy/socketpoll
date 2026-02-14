@@ -1,3 +1,6 @@
+#include "socket.hpp"
+#include "test_utils.hpp"
+
 #ifdef _WIN32
 #include <winsock2.h>
 #include <ws2tcpip.h>
@@ -14,45 +17,9 @@ using socket_t = int;
 #define CLOSE_SOCKET close
 #endif
 
-#include "socket.hpp"
-
+#include <catch2/catch_test_macros.hpp>
 #include <chrono>
 #include <thread>
-#define CATCH_CONFIG_RUNNER
-#include <catch2/catch_session.hpp>
-#include <catch2/catch_test_macros.hpp>
-
-int main(int argc, char* argv[]) {
-#ifdef _WIN32
-    WSADATA wsaData;
-    if (WSAStartup(MAKEWORD(2, 2), &wsaData) != 0) {
-        return 1;
-    }
-#endif
-
-    int result = Catch::Session().run(argc, argv);
-
-#ifdef _WIN32
-    WSACleanup();
-#endif
-    return result;
-}
-
-uint16_t findAvailablePort() {
-    Socket s;
-    s.create();
-    s.setReuseAddr(true);
-    s.bind(0);
-
-    sockaddr_in addr{};
-#ifdef _WIN32
-    int len = sizeof(addr);
-#else
-    socklen_t len = sizeof(addr);
-#endif
-    getsockname(s.fd(), reinterpret_cast<sockaddr*>(&addr), &len);
-    return ntohs(addr.sin_port);
-}
 
 TEST_CASE("Socket: Construction and destruction") {
     SECTION("Default construction") {
@@ -79,8 +46,13 @@ TEST_CASE("Socket: Construction and destruction") {
             fd = s.fd();
             REQUIRE(s.valid());
         }
+#ifdef _WIN32
+        REQUIRE(send(fd, nullptr, 0, 0) == SOCKET_ERROR);
+        REQUIRE(WSAGetLastError() == WSAENOTSOCK);
+#else
         REQUIRE(fcntl(fd, F_GETFD) == -1);
         REQUIRE(errno == EBADF);
+#endif
     }
 }
 
@@ -110,8 +82,13 @@ TEST_CASE("Socket: Move semantics") {
         REQUIRE(s2.valid());
         REQUIRE(s2.fd() == fd);
         REQUIRE_FALSE(s1.valid());
+#ifdef _WIN32
+        REQUIRE(send(old_fd, nullptr, 0, 0) == SOCKET_ERROR);
+        REQUIRE(WSAGetLastError() == WSAENOTSOCK);
+#else
         REQUIRE(fcntl(old_fd, F_GETFD) == -1);
         REQUIRE(errno == EBADF);
+#endif
     }
 
     SECTION("Self-move assignment") {

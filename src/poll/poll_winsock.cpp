@@ -15,9 +15,8 @@ struct EventPoll::Impl {
     std::vector<PollEventEntry>             m_active_events{};
     std::mutex                              m_mutex{};
 
-    Impl(int max_events) : { m_poll_fds.reserve(max_events); }
-
-    ~Impl() { WSACleanup(); }
+    Impl(int max_events) { m_poll_fds.reserve(max_events); }
+    ~Impl() = default;
 
     static short toNative(PollEvent event) {
         short native = 0;
