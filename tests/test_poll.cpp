@@ -85,11 +85,14 @@ TEST_CASE("EventPoll: Events") {
     }
 
     SECTION("Wait with timeout") {
-        Socket s;
-        s.create();
+        Socket server;
+        server.create();
+        server.setReuseAddr(true);
+        server.bind(port);
+        server.listen();
 
         EventPoll poll;
-        poll.addFd(s.fd(), PollEvent::READ);
+        poll.addFd(server.fd(), PollEvent::READ);
 
         auto start = std::chrono::steady_clock::now();
         poll.wait(100);

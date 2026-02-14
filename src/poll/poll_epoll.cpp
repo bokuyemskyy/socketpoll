@@ -8,6 +8,7 @@
 #include <stdexcept>
 #include <sys/epoll.h>
 #include <sys/eventfd.h>
+#include <unistd.h>
 
 struct EventPoll::Impl {
     socket_t                        m_epoll_fd;
