@@ -13,7 +13,7 @@ inline uint16_t findAvailablePort() {
     Socket s;
     s.create();
     s.setReuseAddr(true);
-    s.bind(0);
+    s.bind("127.0.0.1", 0);
 
     sockaddr_in addr{};
 #ifdef _WIN32

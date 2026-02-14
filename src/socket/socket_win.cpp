@@ -85,14 +85,19 @@ void Socket::setNonBlocking(bool enable) {
     ioctlsocket(m_fd, FIONBIO, &mode);
 }
 
-void Socket::bind(uint16_t port) {
+void Socket::bind(const std::string& host, uint16_t port) {
     sockaddr_in addr{};
-    addr.sin_family      = AF_INET;
-    addr.sin_addr.s_addr = INADDR_ANY;
-    addr.sin_port        = htons(port);
+    addr.sin_family = AF_INET;
+    addr.sin_port   = htons(port);
 
-    if (::bind(m_fd, reinterpret_cast<sockaddr*>(&addr), sizeof(addr)) < 0)
-        throw std::runtime_error("bind failed");
+    if (::inet_pton(AF_INET, host.c_str(), &addr.sin_addr) != 1) {
+        throw std::runtime_error("invalid host address: " + host);
+    }
+
+    if (::bind(m_fd, reinterpret_cast<sockaddr*>(&addr), sizeof(addr)) < 0) {
+        throw std::runtime_error("bind to " + host + ":" + std::to_string(port) +
+                                 " failed: " + std::to_string(WSAGetLastError()));
+    }
 }
 
 void Socket::listen(int backlog) {

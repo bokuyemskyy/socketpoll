@@ -109,13 +109,13 @@ TEST_CASE("Socket: Options") {
         REQUIRE_NOTHROW(s.setReuseAddr(true));
 
         uint16_t port = findAvailablePort();
-        s.bind(port);
+        s.bind("127.0.0.1", port);
         s.close();
 
         Socket s2;
         s2.create();
         s2.setReuseAddr(true);
-        REQUIRE_NOTHROW(s2.bind(port));
+        REQUIRE_NOTHROW(s2.bind("127.0.0.1", port));
     }
 
     SECTION("SetNonBlocking") {
@@ -133,7 +133,7 @@ TEST_CASE("Socket: Bind and listen") {
         s.setReuseAddr(true);
 
         uint16_t port = findAvailablePort();
-        REQUIRE_NOTHROW(s.bind(port));
+        REQUIRE_NOTHROW(s.bind("127.0.0.1", port));
         REQUIRE_NOTHROW(s.listen(10));
     }
 }
@@ -145,7 +145,7 @@ TEST_CASE("Socket: Accept and connect") {
         Socket server;
         server.create();
         server.setReuseAddr(true);
-        server.bind(port);
+        server.bind("127.0.0.1", port);
         server.listen();
 
         bool        client_connected = false;
@@ -173,7 +173,7 @@ TEST_CASE("Socket: Send and receive") {
         Socket server;
         server.create();
         server.setReuseAddr(true);
-        server.bind(port);
+        server.bind("127.0.0.1", port);
         server.listen();
 
         std::thread client_thread([&]() {
@@ -203,7 +203,7 @@ TEST_CASE("Socket: Send and receive") {
         Socket server;
         server.create();
         server.setReuseAddr(true);
-        server.bind(port);
+        server.bind("127.0.0.1", port);
         server.listen();
 
         std::thread client_thread([&]() {
@@ -233,7 +233,7 @@ TEST_CASE("Socket: Send and receive") {
         Socket server;
         server.create();
         server.setReuseAddr(true);
-        server.bind(port);
+        server.bind("127.0.0.1", port);
         server.listen();
 
         std::thread client_thread([&]() {

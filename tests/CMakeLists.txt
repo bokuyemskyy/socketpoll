@@ -12,6 +12,5 @@ add_executable(tests test_main.cpp test_socket.cpp test_poll.cpp)
 
 target_link_libraries(tests PRIVATE Catch2::Catch2 socketpoll)
 
-list(APPEND CMAKE_MODULE_PATH ${catch2_SOURCE_DIR}/extras)
 include(Catch)
 catch_discover_tests(tests)

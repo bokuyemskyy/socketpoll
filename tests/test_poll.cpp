@@ -60,7 +60,7 @@ TEST_CASE("EventPoll: Events") {
         Socket server;
         server.create();
         server.setReuseAddr(true);
-        server.bind(port);
+        server.bind("127.0.0.1", port);
         server.listen();
 
         EventPoll poll;
@@ -88,7 +88,7 @@ TEST_CASE("EventPoll: Events") {
         Socket server;
         server.create();
         server.setReuseAddr(true);
-        server.bind(port);
+        server.bind("127.0.0.1", port);
         server.listen();
 
         EventPoll poll;
@@ -109,7 +109,7 @@ TEST_CASE("EventPoll: Events") {
         Socket server;
         server.create();
         server.setReuseAddr(true);
-        server.bind(port);
+        server.bind("127.0.0.1", port);
         server.listen();
 
         Socket s2;
@@ -151,7 +151,7 @@ TEST_CASE("EventPoll: Integration with socket") {
         Socket server;
         server.create();
         server.setReuseAddr(true);
-        server.bind(port);
+        server.bind("127.0.0.1", port);
         server.listen();
 
         EventPoll poll;
@@ -180,7 +180,7 @@ TEST_CASE("EventPoll: Integration with socket") {
         Socket server;
         server.create();
         server.setReuseAddr(true);
-        server.bind(port);
+        server.bind("127.0.0.1", port);
         server.listen();
 
         std::thread client_thread([&]() {

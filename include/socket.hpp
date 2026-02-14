@@ -38,7 +38,7 @@ class Socket {
     void setReuseAddr(bool enable = true);
     void setNonBlocking(bool enable = true);
 
-    void   bind(uint16_t port);
+    void   bind(const std::string& host, uint16_t port);
     void   listen(int backlog = SOMAXCONN);
     Socket accept();
     void   connect(const std::string& host, uint16_t port);
