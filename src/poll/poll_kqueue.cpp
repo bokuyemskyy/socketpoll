@@ -13,7 +13,7 @@ struct EventPoll::Impl {
     std::vector<struct kevent>  m_kernel_events;
     std::mutex                  m_mutex;
 
-    Impl(int max_events) : m_kqueue_fd(kqueue()) { m_kernel_events.reserve(max_events); }
+    Impl(int max_events) : m_kqueue_fd(kqueue()) { m_kernel_events.resize(max_events); }
 
     ~Impl() {
         if (m_kqueue_fd != INVALID_SOCKET_FD)

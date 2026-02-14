@@ -5,12 +5,13 @@ FetchContent_Declare(
     GIT_TAG v3.4.0
 )
 FetchContent_MakeAvailable(catch2)
+
 enable_testing()
 
-add_executable(server_test server_test.cpp)
+add_executable(tests test_socket.cpp test_poll.cpp)
 
-target_link_libraries(server_test PRIVATE Catch2::Catch2WithMain)
+target_link_libraries(tests PRIVATE Catch2::Catch2WithMain socketpoll)
 
-include(CTest)
+list(APPEND CMAKE_MODULE_PATH ${catch2_SOURCE_DIR}/extras)
 include(Catch)
-catch_discover_tests(server_test)
+catch_discover_tests(tests)

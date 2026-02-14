@@ -104,3 +104,10 @@ target_link_libraries(socketpoll PUBLIC ${POLL_LIBS})
 
 # Alias for modern CMake
 add_library(socketpoll::socketpoll ALIAS socketpoll)
+
+# Tests
+option(BUILD_TESTING "Build tests" OFF)
+include(CTest)
+if(BUILD_TESTING)
+    add_subdirectory(tests)
+endif()
