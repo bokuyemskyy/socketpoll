@@ -1,0 +1,52 @@
+name: socketpoll CI
+
+on:
+    push: 
+        branches: [ main ]
+
+jobs:
+    format-check:
+        name: Quality check
+        runs-on: ubuntu-latest
+        steps:
+            - name: Checkout repository
+              uses: actions/checkout@v4
+             
+            - name: Install clang-format-21 and clang-tidy-21
+              run: |
+                wget -qO- https://apt.llvm.org/llvm-snapshot.gpg.key | sudo tee /etc/apt/trusted.gpg.d/llvm.asc
+                sudo add-apt-repository "deb http://apt.llvm.org/jammy/ llvm-toolchain-jammy-21 main"
+                sudo apt-get update
+                sudo apt-get install -y clang-format-21 clang-tidy-21
+                
+                sudo update-alternatives --install /usr/bin/clang-format clang-format /usr/bin/clang-format-21 200
+                sudo update-alternatives --install /usr/bin/clang-tidy clang-tidy /usr/bin/clang-tidy-21 200
+
+            - name: Configure CMake
+              run: cmake -B build
+            
+            - name: Run code quality check
+              run: ./tools/check-all.sh
+    
+    build-and-test:
+        name: Build and test on (${{ matrix.os }})
+        needs: format-check
+        runs-on: ${{ matrix.os }}
+        strategy: 
+            fail-fast: false
+            matrix:
+                os: [ubuntu-latest, macos-latest, windows-latest]
+        
+        steps:
+            - name: Checkout repository
+              uses: actions/checkout@v4
+
+            - name: Configure CMake
+              run: cmake -B build -DBUILD_TESTING=ON
+            
+            - name: Build
+              run: cmake --build build
+
+            - name: Test
+              working-directory: build
+              run: ctest -V
