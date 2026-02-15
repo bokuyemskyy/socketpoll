@@ -9,11 +9,11 @@
 struct EventPoll::Impl {
     socket_t m_kqueue_fd;
 
-    std::vector<PollEventEntry> m_active_events;
-    std::vector<struct kevent>  m_kernel_events;
-    std::mutex                  m_mutex;
+    std::vector<PollEventEntry> active_events;
+    std::vector<struct kevent>  kernel_events;
+    std::mutex                  mutex;
 
-    Impl(int max_events) : m_kqueue_fd(kqueue()) { m_kernel_events.resize(max_events); }
+    Impl(int max_events) : m_kqueue_fd(kqueue()) { kernel_events.resize(max_events); }
 
     ~Impl() {
         if (m_kqueue_fd != INVALID_SOCKET_FD)
@@ -40,7 +40,7 @@ EventPoll::EventPoll(int max_events) : m_pimpl(std::make_unique<Impl>(max_events
 EventPoll::~EventPoll() = default;
 
 void EventPoll::addFd(socket_t fd, PollEvent event) {
-    std::unique_lock<std::mutex> lock(m_pimpl->m_mutex);
+    std::unique_lock<std::mutex> lock(m_pimpl->mutex);
     struct kevent                changes[2];
     int                          n = 0;
 
@@ -57,7 +57,7 @@ void EventPoll::addFd(socket_t fd, PollEvent event) {
 }
 
 void EventPoll::modifyFd(socket_t fd, PollEvent event) {
-    std::unique_lock<std::mutex> lock(m_pimpl->m_mutex);
+    std::unique_lock<std::mutex> lock(m_pimpl->mutex);
 
     struct kevent changes[2];
     int           n = 0;
@@ -78,7 +78,7 @@ void EventPoll::modifyFd(socket_t fd, PollEvent event) {
 }
 
 void EventPoll::removeFd(socket_t fd) {
-    std::unique_lock<std::mutex> lock(m_pimpl->m_mutex);
+    std::unique_lock<std::mutex> lock(m_pimpl->mutex);
 
     struct kevent changes[2];
 
@@ -100,31 +100,31 @@ void EventPoll::wait(int timeout_ms) {
         timeout_ptr          = &timeout_spec;
     }
 
-    int n = kevent(m_pimpl->m_kqueue_fd, NULL, 0, m_pimpl->m_kernel_events.data(), m_max_events, timeout_ptr);
+    int n = kevent(m_pimpl->m_kqueue_fd, NULL, 0, m_pimpl->kernel_events.data(), m_max_events, timeout_ptr);
     if (n == -1) {
         if (errno == EINTR)
             return;
         throw std::runtime_error(strerror(errno));
     }
 
-    std::unique_lock<std::mutex> lock(m_pimpl->m_mutex);
-    m_pimpl->m_active_events.clear();
+    std::unique_lock<std::mutex> lock(m_pimpl->mutex);
+    m_pimpl->active_events.clear();
     for (int i = 0; i < n; i++) {
-        socket_t  fd    = static_cast<socket_t>(m_pimpl->m_kernel_events[i].ident);
+        socket_t  fd    = static_cast<socket_t>(m_pimpl->kernel_events[i].ident);
         PollEvent event = PollEvent::NONE;
 
-        if (m_pimpl->m_kernel_events[i].flags & EV_ERROR) {
+        if (m_pimpl->kernel_events[i].flags & EV_ERROR) {
             event = PollEvent::ERR;
         } else {
-            event = Impl::fromNative(m_pimpl->m_kernel_events[i].filter);
+            event = Impl::fromNative(m_pimpl->kernel_events[i].filter);
         }
 
-        m_pimpl->m_active_events.push_back({fd, event});
+        m_pimpl->active_events.push_back({fd, event});
     }
 }
 
 const std::vector<EventPoll::PollEventEntry>& EventPoll::events() const {
-    return m_pimpl->m_active_events;
+    return m_pimpl->active_events;
 }
 
 #endif

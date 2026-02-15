@@ -78,8 +78,8 @@ TEST_CASE("EventPoll: Events") {
 
         const auto& events = poll.events();
         REQUIRE(events.size() > 0);
-        REQUIRE(events[0].m_fd == server.fd());
-        REQUIRE((events[0].m_events & PollEvent::READ) != 0);
+        REQUIRE(events[0].fd == server.fd());
+        REQUIRE((events[0].events & PollEvent::READ) != 0);
 
         client_thread.join();
     }
@@ -135,9 +135,9 @@ TEST_CASE("EventPoll: Events") {
 
         bool found_s2 = false;
         for (const auto& event : events) {
-            if (event.m_fd == s2.fd()) {
+            if (event.fd == s2.fd()) {
                 found_s2 = true;
-                REQUIRE((event.m_events & PollEvent::WRITE) != 0);
+                REQUIRE((event.events & PollEvent::WRITE) != 0);
             }
         }
         REQUIRE(found_s2);
@@ -202,7 +202,7 @@ TEST_CASE("EventPoll: Integration with socket") {
 
         const auto& events = poll.events();
         REQUIRE(events.size() > 0);
-        REQUIRE(events[0].m_fd == accepted.fd());
+        REQUIRE(events[0].fd == accepted.fd());
 
         std::string   data;
         socket_size_t received = accepted.recv(data);

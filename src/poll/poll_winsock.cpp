@@ -10,12 +10,12 @@
 #include <ws2tcpip.h>
 
 struct EventPoll::Impl {
-    std::vector<WSAPOLLFD>                  m_poll_fds{};
-    std::unordered_map<socket_t, PollEvent> m_fd_map{};
-    std::vector<PollEventEntry>             m_active_events{};
-    std::mutex                              m_mutex{};
+    std::vector<WSAPOLLFD>                  poll_fds{};
+    std::unordered_map<socket_t, PollEvent> fd_map{};
+    std::vector<PollEventEntry>             active_events{};
+    std::mutex                              mutex{};
 
-    Impl(int max_events) { m_poll_fds.reserve(max_events); }
+    Impl(int max_events) { poll_fds.reserve(max_events); }
     ~Impl() = default;
 
     static short toNative(PollEvent event) {
@@ -41,13 +41,13 @@ struct EventPoll::Impl {
     }
 
     void rebuildPollArray() {
-        m_poll_fds.clear();
-        for (const auto& entry : m_fd_map) {
+        poll_fds.clear();
+        for (const auto& entry : fd_map) {
             WSAPOLLFD pfd{};
             pfd.fd      = entry.first;
             pfd.events  = toNative(entry.second);
             pfd.revents = 0;
-            m_poll_fds.push_back(pfd);
+            poll_fds.push_back(pfd);
         }
     }
 };
@@ -56,21 +56,21 @@ EventPoll::EventPoll(int max_events) : m_pimpl(std::make_unique<Impl>(max_events
 EventPoll::~EventPoll() = default;
 
 void EventPoll::addFd(socket_t fd, PollEvent event) {
-    std::unique_lock<std::mutex> lock(m_pimpl->m_mutex);
+    std::unique_lock<std::mutex> lock(m_pimpl->mutex);
 
-    if (m_pimpl->m_fd_map.find(fd) != m_pimpl->m_fd_map.end()) {
+    if (m_pimpl->fd_map.find(fd) != m_pimpl->fd_map.end()) {
         throw std::runtime_error("File descriptor already exists");
     }
 
-    m_pimpl->m_fd_map[fd] = event;
+    m_pimpl->fd_map[fd] = event;
     m_pimpl->rebuildPollArray();
 }
 
 void EventPoll::modifyFd(socket_t fd, PollEvent event) {
-    std::unique_lock<std::mutex> lock(m_pimpl->m_mutex);
+    std::unique_lock<std::mutex> lock(m_pimpl->mutex);
 
-    auto it = m_pimpl->m_fd_map.find(fd);
-    if (it == m_pimpl->m_fd_map.end()) {
+    auto it = m_pimpl->fd_map.find(fd);
+    if (it == m_pimpl->fd_map.end()) {
         throw std::runtime_error("File descriptor not found");
     }
 
@@ -79,9 +79,9 @@ void EventPoll::modifyFd(socket_t fd, PollEvent event) {
 }
 
 void EventPoll::removeFd(socket_t fd) {
-    std::unique_lock<std::mutex> lock(m_pimpl->m_mutex);
+    std::unique_lock<std::mutex> lock(m_pimpl->mutex);
 
-    m_pimpl->m_fd_map.erase(fd);
+    m_pimpl->fd_map.erase(fd);
     m_pimpl->rebuildPollArray();
 }
 
@@ -89,12 +89,12 @@ void EventPoll::wait(int timeout_ms) {
     std::vector<WSAPOLLFD> poll_fds_copy;
 
     {
-        std::unique_lock<std::mutex> lock(m_pimpl->m_mutex);
-        if (m_pimpl->m_poll_fds.empty()) {
-            m_pimpl->m_active_events.clear();
+        std::unique_lock<std::mutex> lock(m_pimpl->mutex);
+        if (m_pimpl->poll_fds.empty()) {
+            m_pimpl->active_events.clear();
             return;
         }
-        poll_fds_copy = m_pimpl->m_poll_fds;
+        poll_fds_copy = m_pimpl->poll_fds;
     }
 
     int n = WSAPoll(poll_fds_copy.data(), static_cast<ULONG>(poll_fds_copy.size()), timeout_ms);
@@ -106,18 +106,18 @@ void EventPoll::wait(int timeout_ms) {
         throw std::runtime_error("WSAPoll failed: " + std::to_string(error));
     }
 
-    std::unique_lock<std::mutex> lock(m_pimpl->m_mutex);
-    m_pimpl->m_active_events.clear();
+    std::unique_lock<std::mutex> lock(m_pimpl->mutex);
+    m_pimpl->active_events.clear();
 
     for (const auto& pfd : poll_fds_copy) {
         if (pfd.revents != 0) {
-            m_pimpl->m_active_events.push_back({pfd.fd, Impl::fromNative(pfd.revents)});
+            m_pimpl->active_events.push_back({pfd.fd, Impl::fromNative(pfd.revents)});
         }
     }
 }
 
 const std::vector<EventPoll::PollEventEntry>& EventPoll::events() const {
-    return m_pimpl->m_active_events;
+    return m_pimpl->active_events;
 }
 
 #endif

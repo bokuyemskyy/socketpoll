@@ -16,8 +16,8 @@ enum PollEvent : uint8_t {
 class EventPoll {
   public:
     struct PollEventEntry {
-        socket_t  m_fd;
-        PollEvent m_events;
+        socket_t  fd;
+        PollEvent events;
     };
 
     EventPoll(int max_events = 256);

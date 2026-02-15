@@ -11,21 +11,21 @@
 #include <unistd.h>
 
 struct EventPoll::Impl {
-    socket_t                        m_epoll_fd;
-    std::vector<struct epoll_event> m_kernel_events{};
-    std::vector<PollEventEntry>     m_active_events{};
-    std::mutex                      m_mutex{};
+    socket_t                        epoll_fd;
+    std::vector<struct epoll_event> kernel_events{};
+    std::vector<PollEventEntry>     active_events{};
+    std::mutex                      mutex{};
 
-    Impl(int max_events) : m_epoll_fd(epoll_create1(0)) {
-        if (m_epoll_fd == INVALID_SOCKET_FD)
+    Impl(int max_events) : epoll_fd(epoll_create1(0)) {
+        if (epoll_fd == INVALID_SOCKET_FD)
             throw std::runtime_error(strerror(errno));
 
-        m_kernel_events.resize(max_events);
+        kernel_events.resize(max_events);
     }
 
     ~Impl() {
-        if (m_epoll_fd != INVALID_SOCKET_FD)
-            close(m_epoll_fd);
+        if (epoll_fd != INVALID_SOCKET_FD)
+            close(epoll_fd);
     }
 
     static uint32_t toNative(PollEvent event) {
@@ -55,36 +55,36 @@ EventPoll::EventPoll(int max_events) : m_pimpl(std::make_unique<Impl>(max_events
 EventPoll::~EventPoll() = default;
 
 void EventPoll::addFd(socket_t fd, PollEvent event) {
-    std::unique_lock<std::mutex> lock(m_pimpl->m_mutex);
+    std::unique_lock<std::mutex> lock(m_pimpl->mutex);
 
     struct epoll_event ev{};
 
     ev.events  = Impl::toNative(event);
     ev.data.fd = fd;
 
-    if (epoll_ctl(m_pimpl->m_epoll_fd, EPOLL_CTL_ADD, fd, &ev) == -1)
+    if (epoll_ctl(m_pimpl->epoll_fd, EPOLL_CTL_ADD, fd, &ev) == -1)
         throw std::runtime_error(strerror(errno));
 }
 
 void EventPoll::modifyFd(socket_t fd, PollEvent event) {
-    std::unique_lock<std::mutex> lock(m_pimpl->m_mutex);
+    std::unique_lock<std::mutex> lock(m_pimpl->mutex);
 
     struct epoll_event ev{};
 
     ev.events  = Impl::toNative(event);
     ev.data.fd = fd;
 
-    if (epoll_ctl(m_pimpl->m_epoll_fd, EPOLL_CTL_MOD, fd, &ev) == -1)
+    if (epoll_ctl(m_pimpl->epoll_fd, EPOLL_CTL_MOD, fd, &ev) == -1)
         throw std::runtime_error(strerror(errno));
 }
 
 void EventPoll::removeFd(socket_t fd) {
-    std::unique_lock<std::mutex> lock(m_pimpl->m_mutex);
-    epoll_ctl(m_pimpl->m_epoll_fd, EPOLL_CTL_DEL, fd, nullptr);
+    std::unique_lock<std::mutex> lock(m_pimpl->mutex);
+    epoll_ctl(m_pimpl->epoll_fd, EPOLL_CTL_DEL, fd, nullptr);
 }
 
 void EventPoll::wait(int timeout_ms) {
-    int n = epoll_wait(m_pimpl->m_epoll_fd, m_pimpl->m_kernel_events.data(), m_max_events, timeout_ms);
+    int n = epoll_wait(m_pimpl->epoll_fd, m_pimpl->kernel_events.data(), m_max_events, timeout_ms);
 
     if (n == -1) {
         if (errno == EINTR)
@@ -92,17 +92,17 @@ void EventPoll::wait(int timeout_ms) {
         throw std::runtime_error(strerror(errno));
     }
 
-    std::unique_lock<std::mutex> lock(m_pimpl->m_mutex);
+    std::unique_lock<std::mutex> lock(m_pimpl->mutex);
 
-    m_pimpl->m_active_events.clear();
+    m_pimpl->active_events.clear();
     for (int i = 0; i < n; i++) {
-        m_pimpl->m_active_events.push_back(
-            {m_pimpl->m_kernel_events[i].data.fd, Impl::fromNative(m_pimpl->m_kernel_events[i].events)});
+        m_pimpl->active_events.push_back(
+            {m_pimpl->kernel_events[i].data.fd, Impl::fromNative(m_pimpl->kernel_events[i].events)});
     }
 }
 
 const std::vector<EventPoll::PollEventEntry>& EventPoll::events() const {
-    return m_pimpl->m_active_events;
+    return m_pimpl->active_events;
 }
 
 #endif
